@@ -12,13 +12,10 @@ from .models import LeaseDraft, RealEstate, LeaseDraftPhoto, RealEstatePhoto
 from .utils import set_user_state, get_message
 from real_estate_tg_bot import settings
 
-ADMIN_USER_ID = 811009969  # Замените на реальный ID администратора
+ADMIN_USER_ID = 1111111
 
 
 def send_language_choice(bot, user_id, profile):
-    """
-    Отправляет сообщение с встроенными кнопками для выбора языка.
-    """
     print("send_language_choice")
     markup = InlineKeyboardMarkup()
     markup.add(
@@ -33,18 +30,12 @@ def send_language_choice(bot, user_id, profile):
 
 
 def ask_for_name(bot, user_id, profile):
-    """
-    Запрашивает у пользователя ввод имени.
-    """
     print("ask_for_name")
     msg_key = 'please_enter_name'
     bot.send_message(user_id, get_message(profile, msg_key), reply_markup=ReplyKeyboardRemove())
 
 
 def handle_register_name(bot, profile, message, text):
-    """
-    Обрабатывает ввод имени пользователя.
-    """
     print("handle_register_name")
     user_id = message.from_user.id
     if text.strip():
@@ -59,23 +50,17 @@ def handle_register_name(bot, profile, message, text):
 
 
 def ask_for_age(bot, user_id, profile):
-    """
-    Запрашивает у пользователя ввод возраста.
-    """
     print("ask_for_age")
     msg_key = 'please_enter_age'
     bot.send_message(user_id, get_message(profile, msg_key), reply_markup=ReplyKeyboardRemove())
 
 
 def handle_register_age(bot, profile, message, text):
-    """
-    Обрабатывает ввод возраста пользователя.
-    """
     print("handle_register_age")
     user_id = message.from_user.id
     if text.strip().isdigit():
         age = int(text.strip())
-        if 18 <= age <= 100:  # Проверка на разумный диапазон возраста
+        if 18 <= age <= 100:
             profile.age = age
             profile.save()
             set_user_state(profile, "register_phone")
@@ -90,9 +75,6 @@ def handle_register_age(bot, profile, message, text):
 
 
 def ask_for_phone(bot, user_id, profile):
-    """
-    Запрашивает у пользователя поделиться номером телефона через кнопку.
-    """
     print("ask_for_phone")
     if profile.language == 'ru':
         button_text = "Поделиться номером с ботом"
@@ -109,9 +91,6 @@ def ask_for_phone(bot, user_id, profile):
 
 
 def handle_start(bot, profile, message, text):
-    """
-    Обрабатывает состояние 'start' - начальное меню после регистрации.
-    """
     print("handle_start")
     user_id = message.from_user.id
 
@@ -134,9 +113,6 @@ def handle_start(bot, profile, message, text):
 
 
 def send_rent_type_choice(bot, user_id, profile):
-    """
-    Отправляет пользователю выбор типа аренды.
-    """
     print("send_rent_type_choice")
     markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     types = ["Квартира", "Дом", "Комната", "Другое", "Закончить"] if profile.language == 'ru' else ["Квартира", "Будинок", "Кімната", "Інше", "Завершити"]
@@ -148,9 +124,6 @@ def send_rent_type_choice(bot, user_id, profile):
 
 
 def handle_rent_choose_type(bot, profile, message, text):
-    """
-    Обрабатывает выбор типа аренды.
-    """
     print("handle_rent_choose_type")
     user_id = message.from_user.id
     finish_keywords_ru = ["закончить", "Закончить"]
@@ -172,9 +145,6 @@ def handle_rent_choose_type(bot, profile, message, text):
 
 
 def send_rent_price_choice(bot, user_id, profile):
-    """
-    Отправляет пользователю выбор диапазона цен.
-    """
     print("send_rent_price_choice")
     markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     prices = ["<5000", "5000-10000", "10000-15000", ">15000", "Закончить"] if profile.language == 'ru' \
@@ -187,9 +157,6 @@ def send_rent_price_choice(bot, user_id, profile):
 
 
 def handle_rent_choose_price(bot, profile, message, text):
-    """
-    Обрабатывает выбор диапазона цен для аренды.
-    """
     print("handle_rent_choose_price")
     user_id = message.from_user.id
     finish_keywords_ru = ["закончить", "Закончить"]
@@ -217,9 +184,6 @@ def handle_rent_choose_price(bot, profile, message, text):
 
 
 def get_filtered_estates(profile):
-    """
-    Фильтрует объекты недвижимости на основе предпочтений пользователя.
-    """
     rent_types = profile.rent_types
     prices = profile.prices
 
@@ -243,9 +207,6 @@ def get_filtered_estates(profile):
 
 
 def show_variants(bot, profile, user_id):
-    """
-    Отображает варианты недвижимости, соответствующие запросу пользователя.
-    """
     print("show_variants")
     qs = get_filtered_estates(profile)
     count = qs.count()
@@ -258,16 +219,13 @@ def show_variants(bot, profile, user_id):
         bot.send_message(user_id, get_message(profile, msg_key), reply_markup=markup)
         return
 
-    profile.last_shown_estate_id = None  # Сбрасываем маркер
+    profile.last_shown_estate_id = None
     profile.save()
 
     show_single_variant(bot, profile, user_id)
 
 
 def show_single_variant(bot, profile, user_id):
-    """
-    Отображает один вариант недвижимости.
-    """
     qs = get_filtered_estates(profile)
     last_id = profile.last_shown_estate_id
 
@@ -285,7 +243,6 @@ def show_single_variant(bot, profile, user_id):
         bot.send_message(user_id, get_message(profile, msg_key), reply_markup=markup)
         return
 
-    # Обновляем маркер
     profile.last_shown_estate_id = estate_qs.id
     profile.save()
 
@@ -307,16 +264,12 @@ def show_single_variant(bot, profile, user_id):
         bot.send_media_group(user_id, media_group)
     bot.send_message(user_id, msg, reply_markup=inline_kb)
 
-    # Кнопки для навигации
     markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(get_message(profile, 'next'), get_message(profile, 'modify_search'))
     bot.send_message(user_id, get_message(profile, 'choose_action'), reply_markup=markup)
 
 
 def handle_show_variants(bot, profile, message, text):
-    """
-    Обрабатывает навигацию по вариантам недвижимости.
-    """
     print("handle_show_variants")
     user_id = message.from_user.id
     if (profile.language == 'ru' and text.lower() == "дальше ➡️") or \
@@ -341,9 +294,6 @@ def handle_show_variants(bot, profile, message, text):
 
 
 def want_to_rent_callback(bot, profile, call):
-    """
-    Обрабатывает нажатие кнопки "Арендовать" под вариантом недвижимости.
-    """
     print("want_to_rent_callback")
     user_id = call.from_user.id
     username = profile.username
@@ -383,9 +333,6 @@ def want_to_rent_callback(bot, profile, call):
 
 
 def handle_lease_photos(bot, profile, message):
-    """
-    Обрабатывает загрузку фотографий для сдачи недвижимости.
-    """
     print("handle_lease_photos")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -436,9 +383,6 @@ def handle_lease_photos(bot, profile, message):
 
 
 def send_lease_type_choice(bot, user_id, profile):
-    """
-    Отправляет пользователю выбор типа недвижимости для сдачи.
-    """
     print("send_lease_type_choice")
     markup = ReplyKeyboardMarkup(row_width=3, resize_keyboard=True)
     types = ["Квартира", "Дом", "Комната", "Другое"] if profile.language == 'ru' else ["Квартира", "Будинок", "Кімната", "Інше"]
@@ -448,9 +392,6 @@ def send_lease_type_choice(bot, user_id, profile):
 
 
 def handle_lease_type(bot, profile, message, text):
-    """
-    Обрабатывает выбор типа недвижимости для сдачи.
-    """
     print("handle_lease_type")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -474,9 +415,6 @@ def handle_lease_type(bot, profile, message, text):
 
 
 def handle_lease_type_custom(bot, profile, message):
-    """
-    Обрабатывает ввод пользовательского типа недвижимости для сдачи.
-    """
     print("handle_lease_type_custom")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -492,9 +430,6 @@ def handle_lease_type_custom(bot, profile, message):
 
 
 def handle_lease_price(bot, profile, message, text):
-    """
-    Обрабатывает ввод цены за месяц для сдачи недвижимости.
-    """
     print("handle_lease_price")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -510,9 +445,6 @@ def handle_lease_price(bot, profile, message, text):
 
 
 def handle_lease_rooms(bot, profile, message, text):
-    """
-    Обрабатывает ввод количества комнат для сдачи недвижимости.
-    """
     print("handle_lease_rooms")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -528,9 +460,6 @@ def handle_lease_rooms(bot, profile, message, text):
 
 
 def handle_lease_description(bot, profile, message):
-    """
-    Обрабатывает ввод описания недвижимости для сдачи.
-    """
     print("handle_lease_description")
     user_id = message.from_user.id
     draft = LeaseDraft.objects.filter(profile=profile).last()
@@ -561,9 +490,6 @@ def handle_lease_description(bot, profile, message):
 
 
 def handle_lease_confirm(bot, profile, message, text):
-    """
-    Обрабатывает подтверждение или отмену создания объявления о сдаче недвижимости.
-    """
     print("handle_lease_confirm")
     user_id = message.from_user.id
     if (profile.language == 'ru' and text.lower() == "подтвердить ✅") or \
@@ -623,9 +549,6 @@ def handle_lease_confirm(bot, profile, message, text):
 
 
 def handle_contact_moderator(bot, profile, message, text):
-    """
-    Обрабатывает обращение пользователя к модератору.
-    """
     print("handle_contact_moderator")
     user_id = message.from_user.id
 
@@ -650,9 +573,6 @@ def handle_contact_moderator(bot, profile, message, text):
 
 
 def handle_help(bot, message, profile):
-    """
-    Обрабатывает неизвестные команды или сообщения.
-    """
     user_id = message.from_user.id
     markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(get_message(profile, 'rent'), get_message(profile, 'lease'))
@@ -662,9 +582,6 @@ def handle_help(bot, message, profile):
 
 
 def ask_to_load_photos(bot, user_id, profile):
-    """
-    Запрашивает у пользователя загрузку фотографий недвижимости для сдачи.
-    """
     done_text = "Готово ✅"
     back_text = "Назад ↩️"
 
@@ -679,15 +596,11 @@ def ask_to_load_photos(bot, user_id, profile):
 
 
 def extract_description(text, language):
-    """
-    Извлекает описание недвижимости из текста на основе языка.
-    """
     if language == 'ru':
         pattern = r"(?:Тип: .+|Цена: .+|Комнат: .+)\s*\n+(.*)"
     elif language == 'uk':
         pattern = r"(?:Тип: .+|Ціна: .+|Кімнат: .+)\s*\n+(.*)"
     else:
-        # По умолчанию используем русский
         pattern = r"(?:Тип: .+|Цена: .+|Комнат: .+)\s*\n+(.*)"
 
     match = re.search(pattern, text, re.DOTALL)

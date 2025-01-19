@@ -20,7 +20,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rest.settings')
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
-TOKEN = "7675092570:AAHCTUauv0W9w2dl55ymiNh0tuQSKdb3kIo"  # замените на ваш реальный токен
+TOKEN = "token"
 
 
 def main():
@@ -34,19 +34,16 @@ def main():
             username = message.from_user.username
             profile = get_or_create_profile(username)
 
-            # Проверяем, выбран ли уже язык
             if not profile.language:
                 set_user_state(profile, "choose_language")
                 send_language_choice(bot, user_id, profile)
                 return
 
-            # Если язык выбран, но пользователь не зарегистрирован
             if not profile.name and not profile.phone_number:
                 set_user_state(profile, "register_name")
                 ask_for_name(bot, user_id, profile)
                 return
 
-            # Пользователь зарегистрирован, показываем главное меню
             set_user_state(profile, "start")
             markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
             markup.add(get_message(profile, 'rent'), get_message(profile, 'lease'))
@@ -56,7 +53,6 @@ def main():
             print(f"Ошибка в start_handler: {e}")
             traceback.print_exc()
 
-    # Обработчик callback-запросов для выбора языка
     @bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
     def callback_language_handler(call):
         try:
@@ -78,11 +74,9 @@ def main():
                 ask_for_name(bot, user_id, profile)
                 print(f"Пользователь {username} выбрал Украинский язык.")
             else:
-                # Если получен неожиданный callback_data
                 handle_help(bot, call.message, profile)
                 print(f"Неизвестный выбор языка: {data} от пользователя {username}")
 
-            # Удаляем inline клавиатуру после выбора
             bot.delete_message(chat_id=call.message.chat.id,
                 message_id=call.message.message_id)
 
@@ -91,7 +85,6 @@ def main():
             traceback.print_exc()
             bot.send_message(call.message.chat.id, "Произошла ошибка при выборе языка. Пожалуйста, попробуйте снова.")
 
-    # Обработчик сообщений с контактной информацией
     @bot.message_handler(content_types=['contact'])
     def contact_handler(message):
         try:
@@ -114,13 +107,11 @@ def main():
                 else:
                     ask_for_phone(bot, user_id, profile)
             else:
-                # Обработка других состояний, если требуется
                 print(f"Получен контакт от пользователя {username}, но состояние: {state}")
         except Exception as e:
             print(f"Ошибка в contact_handler: {e}")
             traceback.print_exc()
 
-    # Основной обработчик сообщений
     @bot.message_handler(func=lambda m: True, content_types=['photo', 'text'])
     def main_handler(message):
         try:
@@ -130,10 +121,6 @@ def main():
             state = get_user_state(profile)
             text = message.text.lower() if message.text else ""
 
-            if message.content_type == 'text':
-                print(f"Получено текстовое сообщение от {username}: {text}")
-            elif message.content_type == 'photo':
-                print(f"Получено фото от {username}")
 
             if state == "start":
                 handle_start(bot, profile, message, text)
@@ -169,7 +156,6 @@ def main():
             print(f"Ошибка в main_handler: {e}")
             traceback.print_exc()
 
-    # Обработчик callback-запросов для аренды недвижимости
     @bot.callback_query_handler(func=lambda call: call.data.startswith("rent_"))
     def callback_want_to_rent(call):
         try:
@@ -181,7 +167,6 @@ def main():
             print(f"Ошибка в callback_want_to_rent: {e}")
             traceback.print_exc()
 
-    # Запуск бота
     try:
         bot.polling(none_stop=True)
     except Exception as e:
